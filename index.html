@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Preguntas</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        .hidden { display: none; }
+        .container { max-width: 400px; margin: auto; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div id="inicio" class="container">
+        <h1>Juego de Preguntas</h1>
+        <input type="text" id="nombre" placeholder="Ingresa tu nombre">
+        <select id="dificultad">
+            <option value="principiante">Principiante</option>
+            <option value="medio">Medio</option>
+            <option value="crack">Crack</option>
+        </select>
+        <button onclick="iniciarJuego()">Empezar</button>
+    </div>
+
+    <div id="juego" class="container hidden">
+        <h2 id="pregunta"></h2>
+        <input type="text" id="respuesta" placeholder="Tu respuesta">
+        <button onclick="comprobarRespuesta()">Comprobar</button>
+        <p>Tiempo: <span id="tiempo">60</span>s</p>
+        <p>Puntuación: <span id="puntos">0</span></p>
+        <button onclick="usarComodin('tiempo')">+10s</button>
+        <button onclick="usarComodin('saltar')">Saltar Pregunta</button>
+    </div>
+
+    <div id="final" class="container hidden">
+        <h2>¡Juego terminado!</h2>
+        <p>Tu puntuación: <span id="puntajeFinal"></span></p>
+        <p>Leaderboard:</p>
+        <ul id="leaderboard"></ul>
+        <p>¡Has ganado la insignia de jugador estrella!</p>
+        <button onclick="reiniciarJuego()">Jugar de nuevo</button>
+    </div>
+
+    <script>
+        let preguntas = [
+            { pregunta: "¿Cómo se pide el correo electrónico en inglés?", respuesta: "What's your email?" },
+            { pregunta: "¿Cómo se pide el nombre en inglés?", respuesta: "What's your name?" },
+            { pregunta: "¿Cómo se pide la edad en inglés?", respuesta: "How old are you?" }
+        ];
+        let tiempo = 60, puntos = 0, indexPregunta = 0, temporizador, comodines = { tiempo: true, saltar: true };
+        let nombre, dificultad;
+        
+        function iniciarJuego() {
+            nombre = document.getElementById("nombre").value || "Jugador";
+            dificultad = document.getElementById("dificultad").value;
+            document.getElementById("inicio").classList.add("hidden");
+            document.getElementById("juego").classList.remove("hidden");
+            iniciarTemporizador();
+            mostrarPregunta();
+        }
+
+        function iniciarTemporizador() {
+            temporizador = setInterval(() => {
+                tiempo--;
+                document.getElementById("tiempo").textContent = tiempo;
+                if (tiempo <= 0) finalizarJuego();
+            }, 1000);
+        }
+
+        function mostrarPregunta() {
+            if (indexPregunta >= preguntas.length) return finalizarJuego();
+            document.getElementById("pregunta").textContent = preguntas[indexPregunta].pregunta;
+        }
+
+        function comprobarRespuesta() {
+            let respuestaUsuario = document.getElementById("respuesta").value.trim();
+            if (respuestaUsuario.toLowerCase() === preguntas[indexPregunta].respuesta.toLowerCase()) {
+                puntos += 10;
+                alert("¡Correcto!");
+            } else {
+                alert("Incorrecto");
+            }
+            document.getElementById("puntos").textContent = puntos;
+            indexPregunta++;
+            document.getElementById("respuesta").value = "";
+            mostrarPregunta();
+        }
+
+        function usarComodin(tipo) {
+            if (!comodines[tipo]) return;
+            if (tipo === "tiempo") tiempo += 10;
+            if (tipo === "saltar") indexPregunta++;
+            comodines[tipo] = false;
+            mostrarPregunta();
+        }
+
+        function finalizarJuego() {
+            clearInterval(temporizador);
+            document.getElementById("juego").classList.add("hidden");
+            document.getElementById("final").classList.remove("hidden");
+            document.getElementById("puntajeFinal").textContent = puntos;
+            actualizarLeaderboard();
+        }
+
+        function actualizarLeaderboard() {
+            let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || { principiante: [], medio: [], crack: [] };
+            leaderboard[dificultad].push({ nombre, puntos });
+            leaderboard[dificultad].sort((a, b) => b.puntos - a.puntos);
+            localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+            mostrarLeaderboard(leaderboard[dificultad]);
+        }
+
+        function mostrarLeaderboard(lista) {
+            let leaderboardHTML = "";
+            lista.slice(0, 5).forEach(entry => {
+                leaderboardHTML += `<li>${entry.nombre}: ${entry.puntos} pts</li>`;
+            });
+            document.getElementById("leaderboard").innerHTML = leaderboardHTML;
+        }
+
+        function reiniciarJuego() {
+            tiempo = 60; puntos = 0; indexPregunta = 0;
+            comodines = { tiempo: true, saltar: true };
+            document.getElementById("tiempo").textContent = tiempo;
+            document.getElementById("puntos").textContent = puntos;
+            document.getElementById("final").classList.add("hidden");
+            document.getElementById("inicio").classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>
